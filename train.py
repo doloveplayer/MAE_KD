@@ -31,7 +31,6 @@ def Mae_train(model, train_loader, val_loader, epochs=config['train_epoch'],
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    criterion = get_loss_function(config['loss_function'])  # 动态获取损失函数
     optimizer = get_optimizer(config['optimizer'], model, config['learning_rate'], config['weight_decay'])  # 动态获取优化器
 
     fp16 = config['fp16']
@@ -45,7 +44,7 @@ def Mae_train(model, train_loader, val_loader, epochs=config['train_epoch'],
 
     # 最佳模型损失和初始epoch
     best_loss = float('inf')
-    start_epoch, _ = load_checkpoint(config['best_checkpoint_path'], model, optimizer)
+    start_epoch, _ = load_checkpoint(config['best_checkpoint'], model, optimizer)
     if start_epoch is None:
         start_epoch = 0
 
@@ -98,7 +97,7 @@ def Mae_train(model, train_loader, val_loader, epochs=config['train_epoch'],
         # 保存当前损失最小的模型
         if avg_epoch_loss < best_loss:
             best_loss = avg_epoch_loss
-            save_checkpoint(model, optimizer, epoch + 1, avg_epoch_loss, config['best_checkpoint_path'])
+            save_checkpoint(model, optimizer, epoch + 1, avg_epoch_loss, config['best_checkpoint'])
             print(f"Best model saved at epoch {epoch + 1} with loss {best_loss:.4f}")
             no_improve_epochs = 0  # 重置没有改善的epoch计数器
         else:

@@ -3,6 +3,7 @@ import os
 
 def save_checkpoint(model, optimizer, epoch, loss, filepath):
     """保存检查点函数"""
+    print(f"Saving checkpoint to {filepath}")
     checkpoint = {
         'epoch': epoch,
         'model_state_dict': model.state_dict(),

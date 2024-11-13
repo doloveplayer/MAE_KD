@@ -41,7 +41,7 @@ transform = transforms.Compose([
 
 def get_dataloader():
     dataset = SegmentationDataset(features_dir=config['img_path'], labels_dir=config['features_path'], transform=transform)  # 实例化数据集
-    return DataLoader(dataset, batch_size=config['train_batch'], shuffle=True, drop_last=True, num_workers=config['num_workers'])
+    return DataLoader(dataset, batch_size=config['train_batch'], shuffle=True, drop_last=True, num_workers=config['num_workers'],persistent_workers=True)
 
 
 TingVIT_train_loader = get_dataloader()  # 创建 DataLoader 实例

@@ -8,17 +8,17 @@ import torchvision.transforms as transforms
 config = {
     'save_dir': './checkpoints/Mae2_Vit_CA',
     'logs_dir': './logs/Mae2_Vit_CA',
-    'best_checkpoint_path': './checkpoints/Mae2/Mae2_Vit_CA_best.pth',
+    'best_checkpoint': './checkpoints/Mae2_Vit_CA/Mae2_Vit_CA_best.pth',
     'out_img_dir': './output/Mae2_Vit_CA',
     'comment': "Mae2_Vit_CA",
-    'train_batch': 16,
+    'train_batch': 64,
     'train_epoch': 100,
-    'num_workers': 4,
-    'learning_rate': 1e-4,
+    'num_workers': 2,
+    'learning_rate': 3e-4,
     'weight_decay': 1e-5,
     'momentum': 0.9,
     'save_interval': 5,
-    'patience': 50,
+    'patience': 5,
     'img_path': '../segformer-pytorch-master/VOCdevkit/VOC2012/JPEGImages',  # 数据集路径
     'loss_function': 'MSELoss',  # 损失函数
     'optimizer': 'AdamW',  # 优化器
@@ -36,12 +36,12 @@ transform = transforms.Compose([
 # 创建数据集和数据加载器
 def get_train_dataloader():
     dataset = MyCustomDataset(root_dir=config['img_path'], transform=transform)  # 实例化数据集
-    return DataLoader(dataset, batch_size=config['train_batch'], shuffle=True, drop_last=True, num_workers=config['num_workers'])
+    return DataLoader(dataset, batch_size=config['train_batch'], shuffle=True, drop_last=True, num_workers=config['num_workers'],persistent_workers=True)
 
 # 创建数据集和数据加载器
 def get_val_dataloader():
     dataset = MyCustomDataset(root_dir=config['img_path'], transform=transform, split= 'val')  # 实例化数据集
-    return DataLoader(dataset, batch_size=config['train_batch'], shuffle=True, drop_last=True, num_workers=config['num_workers'])
+    return DataLoader(dataset, batch_size=config['train_batch'], shuffle=True, drop_last=True, num_workers=config['num_workers'],persistent_workers=True)
 
 Mae_train_loader = get_train_dataloader()  # 创建 DataLoader 实例
 Mae_val_loader = get_val_dataloader()  # 创建 DataLoader 实例

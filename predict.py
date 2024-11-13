@@ -96,7 +96,7 @@ def predict_and_save(model, teacher, data_loader, save_dir, device):
 
             # 获取 SegSAM 生成的掩码
             t2 = time.time()
-            teacher.image_encoder = model
+            teacher.image_encoder = model.image_encoder
             mask_generator = SamAutomaticMaskGenerator(teacher)
             presam_masks = mask_generator.generate(image_np)
             print("pre sam gen mask:", presam_masks)
@@ -133,8 +133,11 @@ def predict_and_save(model, teacher, data_loader, save_dir, device):
 
 # 使用你的模型和测试数据
 if __name__ == '__main__':
-    load_dir = './checkpoints/preSegEncoder/preSegEncoder_best.pth'  # 替换为实际路径
-    save_dir = './output/preSegEncoder'  # 替换为保存结果的路径
+    # load_dir = './checkpoints/preSegEncoder/preSegEncoder_best.pth'  # 替换为实际路径
+    # save_dir = './output/preSegEncoder'  # 替换为保存结果的路径
+
+    load_dir = './checkpoints/TinyVITEncoder_offline/checkpoint_epoch_5.pth'  # 替换为实际路径
+    save_dir = './output/TinyVITEncoder_offline'  # 替换为保存结果的路径
 
     # load_dir = './checkpoints/preSegEncoderB0/preSegEncoderB0_best.pth'  # 替换为实际路径
     # save_dir = './output/preSegEncoderB0'  # 替换为保存结果的路径
@@ -144,12 +147,12 @@ if __name__ == '__main__':
 
     # 实例化模型并加载权重
     preSegEncoder, sam, device = buildPreSegEncoder()
-    optimizer = torch.optim.AdamW(preSegEncoder.parameters(), lr=1e-4, weight_decay=1e-5)
-    load_checkpoint(load_dir, preSegEncoder, optimizer)
+    # optimizer = torch.optim.AdamW(preSegEncoder.parameters(), lr=1e-4, weight_decay=1e-5)
+    # load_checkpoint(load_dir, preSegEncoder, optimizer)
 
-    # TinyVitSAM = build_sam_vit_t()
-    # optimizer = torch.optim.AdamW(TinyVitSAM.parameters(), lr=1e-4, weight_decay=1e-5)
-    # load_checkpoint(load_dir, TinyVitSAM, optimizer)
+    TinyVitSAM = build_sam_vit_t()
+    optimizer = torch.optim.AdamW(TinyVitSAM.parameters(), lr=1e-4, weight_decay=1e-5)
+    load_checkpoint(load_dir, TinyVitSAM, optimizer)
 
     # mobile_sam_checkpoint = "D:\deeplearning\MobileSAM-master\weights\mobile_sam.pt"
     # mobile_sam_type = "vit_t"
@@ -157,4 +160,4 @@ if __name__ == '__main__':
     # mobile_sam.to(device=device)
 
     # 进行预测并保存结果
-    predict_and_save(preSegEncoder, sam, train_loader, save_dir, device)
+    predict_and_save(TinyVitSAM, sam, train_loader, save_dir, device)
