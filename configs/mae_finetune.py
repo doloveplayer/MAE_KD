@@ -29,10 +29,7 @@ config = {
 
 transform = transforms.Compose([
     transforms.RandomResizedCrop(224),          # 随机裁剪到 224x224
-    transforms.RandomHorizontalFlip(),          # 随机水平翻转
-    transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),  # 随机颜色调整
-    transforms.RandomRotation(30),             # 随机旋转 -30 到 +30 度
-    transforms.RandomAffine(20, translate=(0.2, 0.2), scale=(0.8, 1.2)),  # 随机仿射变换
+    transforms.RandAugment(num_ops=2, magnitude=9),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # 归一化
 ])
