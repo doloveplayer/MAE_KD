@@ -84,32 +84,27 @@ class MAE(nn.Module):
         # torch.Size([1, 256, 147])
         # print(unmask_patches.shape)
 
-        # # 保存未被掩码图片
-        # # 创建一个白色背景图像
-        # reconstructed_image = torch.ones((c, h, w), device=patches.device)  # (c, h, w)格式为通道优先
-        # clone_img = x.clone()
+        # 保存未被掩码图片
+        # 创建一个白色背景图像
+        mask_image = torch.ones((b, c, h, w), device=patches.device)  # (b, c, h, w)格式为通道优先
+        clone_img = x.clone()
 
-        # # 逐个放置未被掩码的图像块
-        # for i in range(b):  # 对于每一个批次
-        #     for j in range(h // self.patch_h):
-        #         for k in range(w // self.patch_w):
-        #             # 计算当前块的索引
-        #             patch_index = j * (w // self.patch_w) + k
-        #
-        #             # 检查该块是否被掩码
-        #             if patch_index not in mask_ind[i]:
-        #                 # 计算当前块在原图中的位置
-        #                 start_row = j * self.patch_h
-        #                 start_col = k * self.patch_w
-        #
-        #                 # 将未被掩码的图像块放回到原位置
-        #                 reconstructed_image[:, start_row:start_row + self.patch_h, start_col:start_col + self.patch_w] = \
-        #                     clone_img[i, :, start_row:start_row + self.patch_h, start_col:start_col + self.patch_w]
-        #
-        # if save_path:
-        #     os.makedirs(save_path, exist_ok=True)
-        #     print(reconstructed_image.shape)
-        #     vutils.save_image(reconstructed_image, os.path.join(save_path, f'unmaske_image.png'))
+        # 逐个放置未被掩码的图像块
+        for i in range(b):  # 对于每一个批次
+            for j in range(h // self.patch_h):
+                for k in range(w // self.patch_w):
+                    # 计算当前块的索引
+                    patch_index = j * (w // self.patch_w) + k
+
+                    # 检查该块是否被掩码
+                    if patch_index not in mask_ind[i]:
+                        # 计算当前块在原图中的位置
+                        start_row = j * self.patch_h
+                        start_col = k * self.patch_w
+
+                        # 将未被掩码的图像块放回到原位置
+                        mask_image[i, :, start_row:start_row + self.patch_h, start_col:start_col + self.patch_w] = \
+                            clone_img[i, :, start_row:start_row + self.patch_h, start_col:start_col + self.patch_w]
 
         '''iii. Encode'''
         # 将 patches 通过 emebdding 转换成 tokens
@@ -119,7 +114,7 @@ class MAE(nn.Module):
         unmask_tokens += self.encoder.pos_embed.repeat(b, 1, 1)[batch_ind, unmask_ind + 1]
         # 真正的编码过程
         encoded_tokens = self.encoder.transformer(unmask_tokens)
-        print("encoded_tokens:", encoded_tokens.shape)
+        # print("encoded_tokens:", encoded_tokens.shape)
 
         '''iv. Decode'''
         # 对编码后的 tokens 维度进行转换，从而符合 Decoder 要求的输入维度
@@ -131,7 +126,7 @@ class MAE(nn.Module):
         # 为 mask tokens 加入位置信息
         # decoder_po_embed 是一个 nn.Embedding(num_patches, decoder_dim) 的实例
         mask_tokens += self.decoder_pos_embed(mask_ind)
-        print("mask_tokens:", mask_tokens.shape)
+        # print("mask_tokens:", mask_tokens.shape)
 
         # 将 mask tokens 与 编码后的 tokens 拼接起来
         # (b, n_patches, decoder_dim)
@@ -141,7 +136,7 @@ class MAE(nn.Module):
         dec_input_tokens[batch_ind, shuffle_indices] = concat_tokens
         # 将全量 tokens 喂给 Decoder 解码
         decoded_tokens = self.decoder(dec_input_tokens)
-        print("decoded_tokens:", decoded_tokens.shape)
+        # print("decoded_tokens:", decoded_tokens.shape)
 
         '''v. Mask pixel Prediction'''
 
@@ -156,7 +151,7 @@ class MAE(nn.Module):
         # print(
         #     f'mse per (masked)patch: {mse_per_patch} mse all (masked)patches: {mse_all_patches} total {num_masked} masked patches')
         # print(f'all close: {torch.allclose(pred_mask_pixel_values, mask_patches, rtol=1e-1, atol=1e-1)}')
-        print(f'mse all (masked)patches: {mse_all_patches} total {num_masked} masked patches')
+        # print(f'mse all (masked)patches: {mse_all_patches} total {num_masked} masked patches')
 
         '''vi. Reconstruction'''
 
@@ -179,12 +174,12 @@ class MAE(nn.Module):
             self.patch_h, self.patch_w, c
         ).permute(0, 5, 1, 3, 2, 4).reshape(b, c, h, w)
 
-        return recons_img, patches_to_img, mse_all_patches
+        return recons_img, patches_to_img, mse_all_patches, mask_image
 
 
 class AttentionMAE(nn.Module):
     def __init__(
-            self, encoder,decoder_dim,
+            self, encoder, decoder_dim,
             mask_ratio=0.75, embed_dim=512,
             num_heads=8
     ):
@@ -231,6 +226,28 @@ class AttentionMAE(nn.Module):
         batch_ind = torch.arange(b, device=device).unsqueeze(-1)
         # 利用先前生成的索引对 patches 进行采样，分为 mask 和 unmasked 两组
         mask_patches, unmask_patches = patches[batch_ind, mask_ind], patches[batch_ind, unmask_ind]
+
+        # 保存未被掩码图片
+        # 创建一个白色背景图像
+        mask_image = torch.ones((b, c, h, w), device=patches.device)  # (b, c, h, w)格式为通道优先
+        clone_img = x.clone()
+
+        # 逐个放置未被掩码的图像块
+        for i in range(b):  # 对于每一个批次
+            for j in range(h // self.patch_h):
+                for k in range(w // self.patch_w):
+                    # 计算当前块的索引
+                    patch_index = j * (w // self.patch_w) + k
+
+                    # 检查该块是否被掩码
+                    if patch_index not in mask_ind[i]:
+                        # 计算当前块在原图中的位置
+                        start_row = j * self.patch_h
+                        start_col = k * self.patch_w
+
+                        # 将未被掩码的图像块放回到原位置
+                        mask_image[i, :, start_row:start_row + self.patch_h, start_col:start_col + self.patch_w] = \
+                            clone_img[i, :, start_row:start_row + self.patch_h, start_col:start_col + self.patch_w]
 
         '''Encode'''
         # 对未被掩码的 patches 进行嵌入
@@ -288,5 +305,5 @@ class AttentionMAE(nn.Module):
             self.patch_h, self.patch_w, c
         ).permute(0, 5, 1, 3, 2, 4).reshape(b, c, h, w)
 
-        return recons_img, patches_to_img, mse_all_patches
+        return recons_img, patches_to_img, mse_all_patches, mask_image
 

@@ -8,20 +8,10 @@ from torchsummary import summary
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 from configs.Mae2 import config,Mae_train_loader,Mae_val_loader
+from utils.loss_optimizer import get_loss_function, get_optimizer
 from utils.modelsave import save_checkpoint, load_checkpoint
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-def get_loss_function(name):
-    if name == 'MSELoss':
-        return nn.MSELoss()
-    raise ValueError(f"Unsupported loss function: {name}")
-
-def get_optimizer(name, model, lr, weight_decay):
-    if name == 'Adam':
-        return torch.optim.Adam(model.parameters(), lr=lr)
-    elif name == 'AdamW':
-        return torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    raise ValueError(f"Unsupported optimizer: {name}")
 
 def Mae_train(model, train_loader, val_loader, epochs=config['train_epoch'],
                   device=config['device'], save_dir=config['save_dir'],
@@ -55,7 +45,7 @@ def Mae_train(model, train_loader, val_loader, epochs=config['train_epoch'],
         epoch_loss = 0.0
 
         # 使用进度条显示训练状态
-        with tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}", unit="img") as tepoch:
+        with tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}", unit="batch") as tepoch:
             for images, _ in tepoch:
                 images = images.to(device)
                 if not fp16:
@@ -138,8 +128,8 @@ if __name__ == '__main__':
         print("CUDA is not available")
     # 实例化模型并加载训练好的权重
     encoder = vit.ViT(224, 14, dim=512, mlp_dim=1024, dim_per_head=64)
-    # mae = Mae.MAE(encoder, decoder_dim=512, decoder_depth=6)
-    mae = Mae.AttentionMAE(encoder, decoder_dim=512)
+    mae = Mae.MAE(encoder, decoder_dim=512, decoder_depth=6)
+    # mae = Mae.AttentionMAE(encoder, decoder_dim=512)
     mae.to(device)
     # mae(torch.randn(1, 3, 224, 224).to(device))
     # summary(mae, input_size=(3, 224, 224))  # 根据模型输入尺寸调整

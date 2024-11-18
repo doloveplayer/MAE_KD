@@ -9,20 +9,9 @@ from utils.modelsave import save_checkpoint, load_checkpoint
 from model import build_sam_vit_t
 from model import buildPreSegEncoder
 from configs.TinyVIT import config,TingVIT_train_loader
+from utils.loss_optimizer import get_loss_function, get_optimizer
 
 torch.cuda.empty_cache()  # 释放未使用的 GPU 内存
-
-def get_loss_function(name):
-    if name == 'MSELoss':
-        return nn.MSELoss()
-    raise ValueError(f"Unsupported loss function: {name}")
-
-def get_optimizer(name, model, lr, weight_decay):
-    if name == 'Adam':
-        return torch.optim.Adam(model.parameters(), lr=lr)
-    elif name == 'AdamW':
-        return torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    raise ValueError(f"Unsupported optimizer: {name}")
 
 def save_teacher_features(teacher, train_dataset, save_dir, device='cuda'):
     teacher.eval()
