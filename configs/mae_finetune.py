@@ -7,17 +7,17 @@ from torchvision import datasets, transforms
 
 # 配置参数
 config = {
-    'save_dir': './checkpoints/Mae_finetune',
-    'logs_dir': './logs/Mae_finetune',
-    'best_checkpoint': './checkpoints/Mae_finetune/Mae_finetune_best.pth',
-    'out_img_dir': './output/Mae_finetune',
-    'comment': "Mae_finetune",
+    'save_dir': './checkpoints/Mae_finetune_v0',
+    'logs_dir': './logs/Mae_finetune_v0',
+    'best_checkpoint': './checkpoints/Mae_finetune_v0/Mae_finetune_v0_best.pth',
+    'out_img_dir': './output/Mae_finetune_v0',
+    'comment': "Mae_finetune_v0",
     'train_batch': 64,
     'train_epoch': 100,
     'num_workers': 1,
-    'learning_rate': 3e-4,
-    'warmup_epochs': 10,
-    'weight_decay': 1e-5,
+    'learning_rate': 1e-3,
+    'warmup_epochs': 5,
+    'weight_decay': 0.05,
     'momentum': 0.9,
     'save_interval': 5,
     'patience': 5,
@@ -27,10 +27,13 @@ config = {
     'device': torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 }
 
-# 数据预处理
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # 缩放到 224x224
-    transforms.ToTensor(),  # 转为张量
+    transforms.RandomResizedCrop(224),          # 随机裁剪到 224x224
+    transforms.RandomHorizontalFlip(),          # 随机水平翻转
+    transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1),  # 随机颜色调整
+    transforms.RandomRotation(30),             # 随机旋转 -30 到 +30 度
+    transforms.RandomAffine(20, translate=(0.2, 0.2), scale=(0.8, 1.2)),  # 随机仿射变换
+    transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # 归一化
 ])
 
